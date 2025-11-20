@@ -97,9 +97,6 @@ bool hasWallAt(const float worldX, const float worldY)
     if (worldX < 0 || worldY < 0)
         return false;
 
-    //const int tileX = std::floor(pixelX / TILE_SIZE);
-    //const int tileY = std::floor(pixelY / TILE_SIZE);
-
     const int tileX = worldToGridCoordinate(worldX);
     const int tileY = worldToGridCoordinate(worldY);
 
@@ -131,8 +128,8 @@ void handleMovement()
 {
     if (keyStates[SDL_SCANCODE_W])
     {
-        const float tentativeX = playerX + (playerDeltaX * 30.0f);
-        const float tentativeY = playerY + (playerDeltaY * 30.0f);
+        const float tentativeX = playerX + (playerDeltaX * 0.5f);
+        const float tentativeY = playerY + (playerDeltaY * 0.5f);
 
         if (!hasWallAt(tentativeX, tentativeY))
         {
@@ -143,8 +140,8 @@ void handleMovement()
 
     if (keyStates[SDL_SCANCODE_S])
     {
-        const float tentativeX = playerX - (playerDeltaX * 30.0f);
-        const float tentativeY = playerY - (playerDeltaY * 30.0f);
+        const float tentativeX = playerX - (playerDeltaX * 0.5f);
+        const float tentativeY = playerY - (playerDeltaY * 0.5f);
 
         if (!hasWallAt(tentativeX, tentativeY))
         {
