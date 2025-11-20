@@ -12,8 +12,8 @@
 namespace
 {
     // Ensure a 2:1 aspect ratio!
-    constexpr Uint16 SCREEN_WIDTH = 2000;
-    constexpr Uint16 SCREEN_HEIGHT = 1000;
+    constexpr Uint16 SCREEN_WIDTH = 3200;
+    constexpr Uint16 SCREEN_HEIGHT = 1600;
 
     SDL_Window* window{nullptr};
     SDL_Renderer* renderer{nullptr};
@@ -60,7 +60,21 @@ namespace
     float playerAngle{std::numbers::pi * 0.5f};
 
     constexpr float rotationSpeed{3.0f};
-    constexpr float moveSpeed{3.0f};
+    constexpr float moveSpeed{200.0f};
+}
+
+bool hasWallAt(const float pixelX, const float pixelY)
+{
+    if (pixelX < 0 || pixelY < 0)
+        return false;
+
+    const int tileX = std::floor(pixelX / TILE_SIZE);
+    const int tileY = std::floor(pixelY / TILE_SIZE);
+
+    if (tileX + tileY > MAP_SIZE)
+        return false;
+
+    return map[tileY][tileX] == 1;
 }
 
 float normaliseAngle(const float angle)
@@ -85,14 +99,26 @@ void handleMovement()
 {
     if (keyStates[SDL_SCANCODE_W])
     {
-        playerX += playerDeltaX * moveSpeed * deltaTime;
-        playerY += playerDeltaY * moveSpeed * deltaTime;
+        const float tentativeX = playerX + (playerDeltaX * 30.0f);
+        const float tentativeY = playerY + (playerDeltaY * 30.0f);
+
+        if (!hasWallAt(tentativeX, tentativeY))
+        {
+            playerX += playerDeltaX * moveSpeed * deltaTime;
+            playerY += playerDeltaY * moveSpeed * deltaTime;
+        }
     }
 
     if (keyStates[SDL_SCANCODE_S])
     {
-        playerX -= playerDeltaX * moveSpeed * deltaTime;
-        playerY -= playerDeltaY * moveSpeed * deltaTime;
+        const float tentativeX = playerX - (playerDeltaX * 30.0f);
+        const float tentativeY = playerY - (playerDeltaY * 30.0f);
+
+        if (!hasWallAt(tentativeX, tentativeY))
+        {
+            playerX -= playerDeltaX * moveSpeed * deltaTime;
+            playerY -= playerDeltaY * moveSpeed * deltaTime;
+        }
     }
 
     if (keyStates[SDL_SCANCODE_A])
@@ -100,8 +126,8 @@ void handleMovement()
         playerAngle -= rotationSpeed * deltaTime;
         playerAngle = normaliseAngle(playerAngle);
 
-        playerDeltaX = std::cos(playerAngle) * TILE_SIZE;// * (SCREEN_WIDTH / GRID_WIDTH);
-        playerDeltaY = std::sin(playerAngle) * TILE_SIZE;// * (SCREEN_HEIGHT / GRID_WIDTH);
+        playerDeltaX = std::cos(playerAngle);
+        playerDeltaY = std::sin(playerAngle);
     }
 
     if (keyStates[SDL_SCANCODE_D])
@@ -109,8 +135,8 @@ void handleMovement()
         playerAngle += rotationSpeed * deltaTime;
         playerAngle = normaliseAngle(playerAngle);
 
-        playerDeltaX = std::cos(playerAngle) * TILE_SIZE;// * (SCREEN_WIDTH / GRID_WIDTH);
-        playerDeltaY = std::sin(playerAngle) * TILE_SIZE;// * (SCREEN_HEIGHT / GRID_HEIGHT);
+        playerDeltaX = std::cos(playerAngle);
+        playerDeltaY = std::sin(playerAngle);
     }
 }
 
@@ -142,20 +168,6 @@ void handleEvent(SDL_Event& event)
             break;
         }
     }
-}
-
-bool hasWallAt(const float pixelX, const float pixelY)
-{
-    if (pixelX < 0 || pixelY < 0)
-        return false;
-
-    const int tileX = std::floor(pixelX / TILE_SIZE);
-    const int tileY = std::floor(pixelY / TILE_SIZE);
-
-    if (tileX + tileY > MAP_SIZE)
-        return false;
-
-    return map[tileY][tileX] == 1;
 }
 
 void drawMap()
@@ -247,8 +259,8 @@ int main(int argc, char* argv[])
     // Convert the field of view into radians.
     FOV = FOV * (std::numbers::pi / 180.0f);
 
-    playerDeltaX = std::cos(playerAngle) * 150.0f;
-    playerDeltaY = std::sin(playerAngle) * 150.0f;
+    playerDeltaX = std::cos(playerAngle);
+    playerDeltaY = std::sin(playerAngle);
 
     // Create and populate the ray distances array.
     std::array<Ray, NUMBER_OF_RAYS> rays{};
