@@ -1,0 +1,11 @@
+.idea
+.vs
+/out*
+
+CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+
+/build*
+/cmake-build-*
