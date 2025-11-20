@@ -8,6 +8,7 @@
 #include <numbers>
 #include <cmath>
 #include <array>
+#include <string>
 
 namespace
 {
@@ -31,7 +32,9 @@ namespace
     constexpr int GRID_WIDTH = 10;
     constexpr int GRID_HEIGHT = 10;
 
-    constexpr float TILE_SIZE = static_cast<float>(SCREEN_WIDTH / 2) / GRID_WIDTH;
+    //constexpr float TILE_SIZE = static_cast<float>(SCREEN_WIDTH / 2) / GRID_WIDTH;
+    constexpr Uint8 TILE_SIZE = 64;
+    constexpr float TILE_PIXEL_SCALE = (SCREEN_WIDTH / 2) / GRID_WIDTH;
 
     constexpr Uint8 RAY_RES = 4;
     constexpr Uint16 NUMBER_OF_RAYS = (SCREEN_WIDTH / 2) / RAY_RES;
@@ -53,23 +56,52 @@ namespace
     };
 
     // Player.
-    float playerX{TILE_SIZE * 2};
-    float playerY{TILE_SIZE * 2};
+    float playerX{1.5f};
+    float playerY{1.5f};
     float playerDeltaX{};
     float playerDeltaY{};
     float playerAngle{std::numbers::pi * 0.5f};
 
     constexpr float rotationSpeed{3.0f};
-    constexpr float moveSpeed{200.0f};
+    constexpr float moveSpeed{2.0f};
 }
 
-bool hasWallAt(const float pixelX, const float pixelY)
+Uint16 gridToPixelCoordinate(const Uint16 gridPosition)
 {
-    if (pixelX < 0 || pixelY < 0)
+    return std::ceil(gridPosition * TILE_PIXEL_SCALE);
+}
+
+Uint16 worldToGridCoordinate(const float worldPosition)
+{
+    return std::floor(worldPosition);
+}
+
+Uint16 worldToPixelCoordinate(const float worldCoordinate)
+{
+    return std::ceil(worldCoordinate * TILE_PIXEL_SCALE);
+}
+
+float pixelToWorldCoordinate(const Uint16 pixel)
+{
+    return static_cast<float>(pixel) / TILE_PIXEL_SCALE;
+}
+
+Uint16 pixelToGridCoordinate(const Uint16 pixel)
+{
+    const float worldPosition = pixelToWorldCoordinate(pixel);
+    return worldToGridCoordinate(worldPosition);
+}
+
+bool hasWallAt(const float worldX, const float worldY)
+{
+    if (worldX < 0 || worldY < 0)
         return false;
 
-    const int tileX = std::floor(pixelX / TILE_SIZE);
-    const int tileY = std::floor(pixelY / TILE_SIZE);
+    //const int tileX = std::floor(pixelX / TILE_SIZE);
+    //const int tileY = std::floor(pixelY / TILE_SIZE);
+
+    const int tileX = worldToGridCoordinate(worldX);
+    const int tileY = worldToGridCoordinate(worldY);
 
     if (tileX + tileY > MAP_SIZE)
         return false;
@@ -172,14 +204,14 @@ void handleEvent(SDL_Event& event)
 
 void drawMap()
 {
-    SDL_FRect rect{0.0f, 0.0f, TILE_SIZE - 2, TILE_SIZE - 2};
+    SDL_FRect rect{0.0f, 0.0f, TILE_PIXEL_SCALE - 2, TILE_PIXEL_SCALE - 2};
 
     for (Uint16 y = 0; y < GRID_HEIGHT; y++)
     {
         for (Uint16 x = 0; x < GRID_WIDTH; x++)
         {
-            rect.x = (SCREEN_WIDTH / 2) + x * TILE_SIZE;
-            rect.y = y * TILE_SIZE;
+            rect.x = (SCREEN_WIDTH / 2) + gridToPixelCoordinate(x);
+            rect.y = gridToPixelCoordinate(y);
 
             if (map[y][x] == 0)
                 SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
@@ -280,17 +312,23 @@ int main(int argc, char* argv[])
 
         handleMovement();
 
+        std::string title = "X: " + std::to_string(playerX) + " Y: " + std::to_string(playerY);
+        SDL_SetWindowTitle(window, title.c_str());
+
         // Render.
         SDL_SetRenderDrawColorFloat(renderer, 0.0f, 0.0f, 0.0f, 0.0f);
         SDL_RenderClear(renderer);
 
         drawMap();
 
-        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-        drawFilledCircle(renderer, SCREEN_WIDTH / 2 + playerX, playerY, 30);
+        const Uint16 playerScreenX = worldToPixelCoordinate(playerX);
+        const Uint16 playerScreenY = worldToPixelCoordinate(playerY);
 
         SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-        SDL_RenderLine(renderer, SCREEN_WIDTH / 2 + playerX, playerY, SCREEN_WIDTH / 2 + playerX + playerDeltaX, playerY + playerDeltaY);
+        drawFilledCircle(renderer, SCREEN_WIDTH / 2 + playerScreenX, playerScreenY, 30);
+
+        // SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+        // SDL_RenderLine(renderer, SCREEN_WIDTH / 2 + playerScreenX, playerScreenY, SCREEN_WIDTH / 2 + playerX + playerDeltaX, playerY + playerDeltaY);
 
         const float degreePerRay = FOV / NUMBER_OF_RAYS;
         const float rayStartAngle = playerAngle - (FOV * 0.5f);
@@ -333,13 +371,15 @@ int main(int argc, char* argv[])
             // if (rayAngle > std::numbers::pi)
             if (isFacingUp)
             {
-                rayY = (std::floor(playerY / TILE_SIZE) * TILE_SIZE) - 0.0001f;
+                // rayY = (std::floor(playerY / TILE_SIZE) * TILE_SIZE) - 0.0001f;
+                rayY = std::floor(playerY) - 0.0001f;
             }
             // The ray is looking 'down'.
             //else if (rayAngle < std::numbers::pi)
             else if (isFacingDown)
             {
-                rayY = (std::floor(playerY / TILE_SIZE) * TILE_SIZE) + TILE_SIZE;
+                // rayY = (std::floor(playerY / TILE_SIZE) * TILE_SIZE) + TILE_SIZE;
+                rayY = std::floor(playerY) + 1;
             }
 
             rayX = ((rayY - playerY) / std::tan(rayAngle)) + playerX;
@@ -352,7 +392,8 @@ int main(int argc, char* argv[])
             }
 
             //float rayYOffset = (rayAngle > std::numbers::pi) ? -TILE_SIZE : TILE_SIZE;
-            float rayYOffset = isFacingUp ? -TILE_SIZE : TILE_SIZE;
+            // float rayYOffset = isFacingUp ? -TILE_SIZE : TILE_SIZE;
+            float rayYOffset = isFacingUp ? -1 : 1;
             float rayXOffset = rayYOffset / std::tan(rayAngle);
 
             while (depth < maximumDepth)
@@ -381,19 +422,22 @@ int main(int argc, char* argv[])
             //if (rayAngle < 0.5f * std::numbers::pi || rayAngle > 1.5f * std::numbers::pi)
             if (isFacingRight)
             {
-                rayX = (std::floor(playerX / TILE_SIZE) * TILE_SIZE) + TILE_SIZE;
+                // rayX = (std::floor(playerX / TILE_SIZE) * TILE_SIZE) + TILE_SIZE;
+                rayX = std::floor(playerX) + 1;
             }
             // The ray is looking 'left'.
             //else if (rayAngle > 0.5f * std::numbers::pi && rayAngle < 1.5f * std::numbers::pi)
             else if (isFacingLeft)
             {
-                rayX = (std::floor(playerX / TILE_SIZE) * TILE_SIZE) - 0.0001f;
+                // rayX = (std::floor(playerX / TILE_SIZE) * TILE_SIZE) - 0.0001f;
+                rayX = std::floor(playerX) - 0.0001f;
             }
 
             rayY = playerY + (rayX - playerX) * std::tan(rayAngle);
 
             //rayXOffset = (rayAngle < std::numbers::pi / 2 || rayAngle > (3.0f * std::numbers::pi) / 2) ? TILE_SIZE : -TILE_SIZE;
-            rayXOffset = isFacingRight ? TILE_SIZE : -TILE_SIZE;
+            // rayXOffset = isFacingRight ? TILE_SIZE : -TILE_SIZE;
+            rayXOffset = isFacingRight ? 1 : -1;
             rayYOffset = rayXOffset * std::tan(rayAngle);
 
             // Reset the current ray depth.
@@ -431,8 +475,11 @@ int main(int argc, char* argv[])
                 rays.at(i).colour = 180;
             }
 
+            Uint16 rayScreenX = worldToPixelCoordinate(rayX);
+            Uint16 rayScreenY = worldToPixelCoordinate(rayY);
+
             // Draw the line.
-            SDL_RenderLine(renderer, SCREEN_WIDTH / 2 + playerX, playerY, SCREEN_WIDTH / 2 + rayX, rayY);
+            SDL_RenderLine(renderer, SCREEN_WIDTH / 2 + playerScreenX, playerScreenY, SCREEN_WIDTH / 2 + rayScreenX, rayScreenY);
 
             rayAngle = normaliseAngle(rayAngle + degreePerRay);
         }
@@ -452,14 +499,15 @@ int main(int argc, char* argv[])
         for (int i = 0; i < NUMBER_OF_RAYS; i++)
         {
             constexpr float wallWidth = (SCREEN_WIDTH / 2) / NUMBER_OF_RAYS;
-            const float wallHeight = (TILE_SIZE / rays.at(i).distance) * distanceToProjectionPlane;
+
+            const float wallHeight = (TILE_SIZE / (rays.at(i).distance * TILE_SIZE)) * distanceToProjectionPlane;
 
             wallRect.x = i * RAY_RES;
             wallRect.y = (SCREEN_HEIGHT * 0.5f) - (wallHeight * 0.5f);
             wallRect.w = wallWidth;
             wallRect.h = wallHeight;
 
-            int colour = rays.at(i).colour * (180 / rays.at(i).distance);
+            int colour = rays.at(i).colour * (90 / (rays.at(i).distance * TILE_SIZE));
             colour = std::clamp(colour, 0, 255);
 
             SDL_SetRenderDrawColor(renderer, colour, colour, colour, 255);
