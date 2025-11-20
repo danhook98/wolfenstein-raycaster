@@ -372,12 +372,12 @@ int main(int argc, char* argv[])
             // The ray is looking 'up'.
             if (isFacingUp)
             {
-                rayY = std::floor(playerY) - 0.00001f;
+                rayY = std::floor(playerY) - 0.000001f;
             }
             // The ray is looking 'down'.
             else if (isFacingDown)
             {
-                rayY = std::floor(playerY) + 1;
+                rayY = std::floor(playerY) + 1.0f;
             }
 
             rayX = ((rayY - playerY) / std::tan(rayAngle)) + playerX;
@@ -417,12 +417,12 @@ int main(int argc, char* argv[])
             // The ray is looking 'right'.
             if (isFacingRight)
             {
-                rayX = std::floor(playerX) + 1;
+                rayX = std::floor(playerX) + 1.0f;
             }
             // The ray is looking 'left'.
             else if (isFacingLeft)
             {
-                rayX = std::floor(playerX) - 0.0001f;
+                rayX = std::floor(playerX) - 0.000001f;
             }
 
             rayY = playerY + (rayX - playerX) * std::tan(rayAngle);
@@ -476,7 +476,7 @@ int main(int argc, char* argv[])
 
         // Render the background
         SDL_FRect background{0.0f, 0.0f, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2};
-        SDL_SetRenderDrawColor(renderer, 180, 0, 0, 255);
+        SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
         SDL_RenderFillRect(renderer, &background);
 
         background.y = SCREEN_HEIGHT / 2;
