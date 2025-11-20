@@ -53,8 +53,8 @@ namespace
     };
 
     // Player.
-    float playerX{};
-    float playerY{};
+    float playerX{TILE_SIZE * 2};
+    float playerY{TILE_SIZE * 2};
     float playerDeltaX{};
     float playerDeltaY{};
     float playerAngle{0.0f};
