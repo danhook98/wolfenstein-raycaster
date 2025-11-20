@@ -10,6 +10,8 @@
 #include <array>
 #include <string>
 
+void drawFilledCircle(SDL_Renderer* renderer, const int centreX, const int centreY, const int radius);
+
 namespace
 {
     // Ensure a 2:1 aspect ratio!
@@ -29,8 +31,8 @@ namespace
     // Ray casting config.
     float FOV = 60.0f;
 
-    constexpr int GRID_WIDTH = 10;
-    constexpr int GRID_HEIGHT = 10;
+    constexpr int GRID_WIDTH = 13;
+    constexpr int GRID_HEIGHT = 13;
 
     //constexpr float TILE_SIZE = static_cast<float>(SCREEN_WIDTH / 2) / GRID_WIDTH;
     constexpr Uint8 TILE_SIZE = 64;
@@ -43,16 +45,19 @@ namespace
     constexpr int MAP_SIZE = GRID_WIDTH * GRID_HEIGHT;
     const int map[GRID_HEIGHT][GRID_WIDTH] =
     {
-        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 0, 0, 1, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 1, 0, 0, 1, 1, 0, 1},
-        {1, 0, 0, 1, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 1, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 1, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+        {1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1},
+        {1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
     };
 
     // Player.
@@ -128,26 +133,40 @@ void handleMovement()
 {
     if (keyStates[SDL_SCANCODE_W])
     {
-        const float tentativeX = playerX + (playerDeltaX * 0.5f);
-        const float tentativeY = playerY + (playerDeltaY * 0.5f);
+        const float xOffset = playerDeltaX < 0 ? -0.25f : 0.25f;
+        const float yOffset = playerDeltaY < 0 ? -0.25f : 0.25f;
 
-        if (!hasWallAt(tentativeX, tentativeY))
-        {
+        const float xOffsetPosition = playerX + xOffset;
+        const float yOffsetPosition = playerY + yOffset;
+
+        SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
+        drawFilledCircle(renderer, (SCREEN_WIDTH / 2) + worldToPixelCoordinate(xOffsetPosition), worldToPixelCoordinate(playerY), 15.0f);
+        drawFilledCircle(renderer, (SCREEN_WIDTH / 2) + worldToPixelCoordinate(playerX), worldToPixelCoordinate(yOffsetPosition), 15.0f);
+
+        if (!hasWallAt(xOffsetPosition, playerY))
             playerX += playerDeltaX * moveSpeed * deltaTime;
+
+        if (!hasWallAt(playerX, yOffsetPosition))
             playerY += playerDeltaY * moveSpeed * deltaTime;
-        }
     }
 
     if (keyStates[SDL_SCANCODE_S])
     {
-        const float tentativeX = playerX - (playerDeltaX * 0.5f);
-        const float tentativeY = playerY - (playerDeltaY * 0.5f);
+        const float xOffset = playerDeltaX < 0 ? -0.25f : 0.25f;
+        const float yOffset = playerDeltaY < 0 ? -0.25f : 0.25f;
 
-        if (!hasWallAt(tentativeX, tentativeY))
-        {
+        const float xOffsetPosition = playerX - xOffset;
+        const float yOffsetPosition = playerY - yOffset;
+
+        SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
+        drawFilledCircle(renderer, (SCREEN_WIDTH / 2) + worldToPixelCoordinate(xOffsetPosition), worldToPixelCoordinate(playerY), 15.0f);
+        drawFilledCircle(renderer, (SCREEN_WIDTH / 2) + worldToPixelCoordinate(playerX), worldToPixelCoordinate(yOffsetPosition), 15.0f);
+
+        if (!hasWallAt(xOffsetPosition, playerY))
             playerX -= playerDeltaX * moveSpeed * deltaTime;
+
+        if (!hasWallAt(playerX, yOffsetPosition))
             playerY -= playerDeltaY * moveSpeed * deltaTime;
-        }
     }
 
     if (keyStates[SDL_SCANCODE_A])
@@ -307,7 +326,7 @@ int main(int argc, char* argv[])
 
         deltaTime = deltaClock.tick();
 
-        handleMovement();
+//        handleMovement();
 
         std::string title = "X: " + std::to_string(playerX) + " Y: " + std::to_string(playerY);
         SDL_SetWindowTitle(window, title.c_str());
@@ -324,25 +343,11 @@ int main(int argc, char* argv[])
         SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
         drawFilledCircle(renderer, SCREEN_WIDTH / 2 + playerScreenX, playerScreenY, 30);
 
-        // SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-        // SDL_RenderLine(renderer, SCREEN_WIDTH / 2 + playerScreenX, playerScreenY, SCREEN_WIDTH / 2 + playerX + playerDeltaX, playerY + playerDeltaY);
-
         const float degreePerRay = FOV / NUMBER_OF_RAYS;
         const float rayStartAngle = playerAngle - (FOV * 0.5f);
 
-        // for (int i = 0; i < NUMBER_OF_RAYS; i++)
-        // {
-        //     float rayAngle = rayStartAngle + (i * degreePerRay);
-        //     rayAngle = normaliseAngle(rayAngle);
-        //
-        //     const float rayEndX = playerX + (std::cos(rayAngle) * 300.0f);
-        //     const float rayEndY = playerY + (std::sin(rayAngle) * 300.0f);
-        //
-        //     SDL_RenderLine(renderer, playerX, playerY, rayEndX, rayEndY);
-        // }
-
         //float rayAngle = playerAngle;
-        constexpr int maximumDepth = 8;
+        constexpr int maximumDepth = 20;
 
         float rayAngle = normaliseAngle(rayStartAngle);
 
@@ -365,17 +370,13 @@ int main(int argc, char* argv[])
             const bool isFacingRight = !isFacingLeft;
 
             // The ray is looking 'up'.
-            // if (rayAngle > std::numbers::pi)
             if (isFacingUp)
             {
-                // rayY = (std::floor(playerY / TILE_SIZE) * TILE_SIZE) - 0.0001f;
-                rayY = std::floor(playerY) - 0.0001f;
+                rayY = std::floor(playerY) - 0.00001f;
             }
             // The ray is looking 'down'.
-            //else if (rayAngle < std::numbers::pi)
             else if (isFacingDown)
             {
-                // rayY = (std::floor(playerY / TILE_SIZE) * TILE_SIZE) + TILE_SIZE;
                 rayY = std::floor(playerY) + 1;
             }
 
@@ -388,8 +389,6 @@ int main(int argc, char* argv[])
                 depth = maximumDepth;
             }
 
-            //float rayYOffset = (rayAngle > std::numbers::pi) ? -TILE_SIZE : TILE_SIZE;
-            // float rayYOffset = isFacingUp ? -TILE_SIZE : TILE_SIZE;
             float rayYOffset = isFacingUp ? -1 : 1;
             float rayXOffset = rayYOffset / std::tan(rayAngle);
 
@@ -416,24 +415,18 @@ int main(int argc, char* argv[])
             float verticalDistance = std::numeric_limits<float>::max();
 
             // The ray is looking 'right'.
-            //if (rayAngle < 0.5f * std::numbers::pi || rayAngle > 1.5f * std::numbers::pi)
             if (isFacingRight)
             {
-                // rayX = (std::floor(playerX / TILE_SIZE) * TILE_SIZE) + TILE_SIZE;
                 rayX = std::floor(playerX) + 1;
             }
             // The ray is looking 'left'.
-            //else if (rayAngle > 0.5f * std::numbers::pi && rayAngle < 1.5f * std::numbers::pi)
             else if (isFacingLeft)
             {
-                // rayX = (std::floor(playerX / TILE_SIZE) * TILE_SIZE) - 0.0001f;
                 rayX = std::floor(playerX) - 0.0001f;
             }
 
             rayY = playerY + (rayX - playerX) * std::tan(rayAngle);
 
-            //rayXOffset = (rayAngle < std::numbers::pi / 2 || rayAngle > (3.0f * std::numbers::pi) / 2) ? TILE_SIZE : -TILE_SIZE;
-            // rayXOffset = isFacingRight ? TILE_SIZE : -TILE_SIZE;
             rayXOffset = isFacingRight ? 1 : -1;
             rayYOffset = rayXOffset * std::tan(rayAngle);
 
@@ -472,8 +465,8 @@ int main(int argc, char* argv[])
                 rays.at(i).colour = 180;
             }
 
-            Uint16 rayScreenX = worldToPixelCoordinate(rayX);
-            Uint16 rayScreenY = worldToPixelCoordinate(rayY);
+            const Uint16 rayScreenX = worldToPixelCoordinate(rayX);
+            const Uint16 rayScreenY = worldToPixelCoordinate(rayY);
 
             // Draw the line.
             SDL_RenderLine(renderer, SCREEN_WIDTH / 2 + playerScreenX, playerScreenY, SCREEN_WIDTH / 2 + rayScreenX, rayScreenY);
@@ -482,13 +475,13 @@ int main(int argc, char* argv[])
         }
 
         // Render the background
-        /* SDL_FRect background{0.0f, 0.0f, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2};
+        SDL_FRect background{0.0f, 0.0f, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2};
         SDL_SetRenderDrawColor(renderer, 180, 0, 0, 255);
         SDL_RenderFillRect(renderer, &background);
 
         background.y = SCREEN_HEIGHT / 2;
         SDL_SetRenderDrawColor(renderer, 40, 40, 40, 255);
-        SDL_RenderFillRect(renderer, &background); */
+        SDL_RenderFillRect(renderer, &background);
 
         SDL_FRect wallRect{0.0f, 0.0f, RAY_RES, 0.0f};
 
@@ -511,7 +504,7 @@ int main(int argc, char* argv[])
 
             SDL_RenderFillRect(renderer, &wallRect);
         }
-
+        handleMovement();
         SDL_RenderPresent(renderer);
     }
 
