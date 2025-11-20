@@ -57,7 +57,7 @@ namespace
     float playerY{TILE_SIZE * 2};
     float playerDeltaX{};
     float playerDeltaY{};
-    float playerAngle{0.0f};
+    float playerAngle{std::numbers::pi * 0.5f};
 
     constexpr float rotationSpeed{3.0f};
     constexpr float moveSpeed{3.0f};
