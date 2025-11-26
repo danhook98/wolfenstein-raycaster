@@ -476,11 +476,11 @@ int main(int argc, char* argv[])
 
         // Render the background
         SDL_FRect background{0.0f, 0.0f, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2};
-        SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
+        SDL_SetRenderDrawColor(renderer, 56, 56, 56, 255);
         SDL_RenderFillRect(renderer, &background);
 
         background.y = SCREEN_HEIGHT / 2;
-        SDL_SetRenderDrawColor(renderer, 40, 40, 40, 255);
+        SDL_SetRenderDrawColor(renderer, 112, 112, 112, 255);
         SDL_RenderFillRect(renderer, &background);
 
         SDL_FRect wallRect{0.0f, 0.0f, RAY_RES, 0.0f};
