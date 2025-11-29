@@ -69,8 +69,6 @@ namespace
 
     constexpr float rotationSpeed{3.0f};
     constexpr float moveSpeed{2.0f};
-
-    bool fixedProjection{true};
 }
 
 float degreesToRadians(const float degrees)
@@ -206,9 +204,6 @@ void handleInput(const SDL_Event& event)
     {
     case SDLK_ESCAPE:
         IS_RUNNING = false;
-        break;
-    case SDLK_P:
-        fixedProjection = !fixedProjection;
         break;
     default:
         break;
@@ -362,7 +357,6 @@ int main(int argc, char* argv[])
         SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
         drawFilledCircle(renderer, SCREEN_WIDTH / 2 + playerScreenX, playerScreenY, 30);
 
-        const float degreePerRay = HFOV / NUMBER_OF_RAYS;
         const float rayStartAngle = playerAngle - (HFOV * 0.5f);
 
         constexpr int maximumDepth = 20;
@@ -488,10 +482,7 @@ int main(int argc, char* argv[])
             const float castAngle = std::atan2f(projectionScreenX, distanceToProjectionPlane) + playerAngle;
 
             // Prepare the ray angle for the next loop.
-            if (fixedProjection)
-                rayAngle = normaliseAngle(castAngle);
-            else
-                rayAngle = normaliseAngle(rayAngle + degreePerRay);
+            rayAngle = normaliseAngle(castAngle);
         }
 
         // Render the background
@@ -509,9 +500,6 @@ int main(int argc, char* argv[])
         for (int i = 0; i < NUMBER_OF_RAYS; i++)
         {
             constexpr float wallWidth = (SCREEN_WIDTH / 2) / NUMBER_OF_RAYS;
-
-            // const float wallHeight = (TILE_SIZE / (rays.at(i).distance * TILE_SIZE)) * distanceToProjectionPlane;
-            // const float wallHeight = distanceToProjectionPlane / rays.at(i).distance;
 
             constexpr float halfWall = 1 * 0.5f;
             const float projectionPlaneY = distanceToProjectionPlane * (halfWall / rays.at(i).distance);
