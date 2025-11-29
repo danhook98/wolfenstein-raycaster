@@ -1,16 +1,18 @@
-#include <algorithm>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
-
-#include "DeltaClock.h"
+#include <SDL3/SDL_video.h>
 
 #include <iostream>
+#include <algorithm>
 #include <numbers>
 #include <cmath>
 #include <array>
 #include <string>
 
+#include "DeltaClock.h"
+
 void drawFilledCircle(SDL_Renderer* renderer, const int centreX, const int centreY, const int radius);
+float degreesToRadians(const float degrees);
 
 namespace
 {
@@ -29,16 +31,14 @@ namespace
     double deltaTime{};
 
     // Ray casting config.
-    float FOV = 60.0f;
+    const float HFOV = degreesToRadians(60.0f);
 
     constexpr int GRID_WIDTH = 13;
     constexpr int GRID_HEIGHT = 13;
 
-    //constexpr float TILE_SIZE = static_cast<float>(SCREEN_WIDTH / 2) / GRID_WIDTH;
-    constexpr Uint8 TILE_SIZE = 64;
     constexpr float TILE_PIXEL_SCALE = (SCREEN_WIDTH / 2) / GRID_WIDTH;
 
-    constexpr Uint8 RAY_RES = 4;
+    constexpr Uint8 RAY_RES = 1;
     constexpr Uint16 NUMBER_OF_RAYS = (SCREEN_WIDTH / 2) / RAY_RES;
 
     // Map.
@@ -46,16 +46,16 @@ namespace
     const int map[GRID_HEIGHT][GRID_WIDTH] =
     {
         {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1},
-        {1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1},
+        {1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1},
+        {1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1},
         {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1},
         {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
         {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
     };
@@ -69,11 +69,23 @@ namespace
 
     constexpr float rotationSpeed{3.0f};
     constexpr float moveSpeed{2.0f};
+
+    bool fixedProjection{true};
+}
+
+float degreesToRadians(const float degrees)
+{
+    return degrees * (std::numbers::pi_v<float> / 180.0f);
+}
+
+float radiansToDegrees(const float radians)
+{
+    return radians * (180.0f / std::numbers::pi_v<float>);
 }
 
 Uint16 gridToPixelCoordinate(const Uint16 gridPosition)
 {
-    return std::ceil(gridPosition * TILE_PIXEL_SCALE);
+    return std::ceil(static_cast<float>(gridPosition) * TILE_PIXEL_SCALE);
 }
 
 Uint16 worldToGridCoordinate(const float worldPosition)
@@ -114,9 +126,9 @@ bool hasWallAt(const float worldX, const float worldY)
 float normaliseAngle(const float angle)
 {
     if (angle <= 0.0f)
-        return angle + (2.0f * std::numbers::pi);
+        return angle + (2.0f * std::numbers::pi_v<float>);
     else if (angle > (2.0f * std::numbers::pi))
-        return angle - (2.0f * std::numbers::pi);
+        return angle - (2.0f * std::numbers::pi_v<float>);
 
     return angle;
 }
@@ -144,10 +156,10 @@ void handleMovement()
         drawFilledCircle(renderer, (SCREEN_WIDTH / 2) + worldToPixelCoordinate(playerX), worldToPixelCoordinate(yOffsetPosition), 15.0f);
 
         if (!hasWallAt(xOffsetPosition, playerY))
-            playerX += playerDeltaX * moveSpeed * deltaTime;
+            playerX += playerDeltaX * moveSpeed * static_cast<float>(deltaTime);
 
         if (!hasWallAt(playerX, yOffsetPosition))
-            playerY += playerDeltaY * moveSpeed * deltaTime;
+            playerY += playerDeltaY * moveSpeed * static_cast<float>(deltaTime);
     }
 
     if (keyStates[SDL_SCANCODE_S])
@@ -163,15 +175,15 @@ void handleMovement()
         drawFilledCircle(renderer, (SCREEN_WIDTH / 2) + worldToPixelCoordinate(playerX), worldToPixelCoordinate(yOffsetPosition), 15.0f);
 
         if (!hasWallAt(xOffsetPosition, playerY))
-            playerX -= playerDeltaX * moveSpeed * deltaTime;
+            playerX -= playerDeltaX * moveSpeed * static_cast<float>(deltaTime);
 
         if (!hasWallAt(playerX, yOffsetPosition))
-            playerY -= playerDeltaY * moveSpeed * deltaTime;
+            playerY -= playerDeltaY * moveSpeed * static_cast<float>(deltaTime);
     }
 
     if (keyStates[SDL_SCANCODE_A])
     {
-        playerAngle -= rotationSpeed * deltaTime;
+        playerAngle -= rotationSpeed * static_cast<float>(deltaTime);
         playerAngle = normaliseAngle(playerAngle);
 
         playerDeltaX = std::cos(playerAngle);
@@ -180,7 +192,7 @@ void handleMovement()
 
     if (keyStates[SDL_SCANCODE_D])
     {
-        playerAngle += rotationSpeed * deltaTime;
+        playerAngle += rotationSpeed * static_cast<float>(deltaTime);
         playerAngle = normaliseAngle(playerAngle);
 
         playerDeltaX = std::cos(playerAngle);
@@ -194,6 +206,9 @@ void handleInput(const SDL_Event& event)
     {
     case SDLK_ESCAPE:
         IS_RUNNING = false;
+        break;
+    case SDLK_P:
+        fixedProjection = !fixedProjection;
         break;
     default:
         break;
@@ -304,9 +319,6 @@ int main(int argc, char* argv[])
 
     keyStates = SDL_GetKeyboardState(nullptr);
 
-    // Convert the field of view into radians.
-    FOV = FOV * (std::numbers::pi / 180.0f);
-
     playerDeltaX = std::cos(playerAngle);
     playerDeltaY = std::sin(playerAngle);
 
@@ -315,7 +327,14 @@ int main(int argc, char* argv[])
     rays.fill({std::numeric_limits<float>::max(), 255});
 
     // Calculate the distance to the projection plane.
-    const float distanceToProjectionPlane = (SCREEN_WIDTH * 0.25f) / std::tan(FOV * 0.5f);
+    const float distanceToProjectionPlane = (SCREEN_WIDTH * 0.25f) / std::tan(HFOV * 0.5f);
+    const float projectionPlaneWidth = distanceToProjectionPlane * std::tan(HFOV * 0.5f) * 2.0f;
+    const float projectionPlaneHalfWidth = projectionPlaneWidth * 0.5f;
+    constexpr int maxX = (SCREEN_WIDTH * 0.5f) - 1;
+
+    const float VFOV = 2 * std::atan(std::tan(HFOV * 0.5f) * (SCREEN_HEIGHT / (SCREEN_WIDTH * 0.5f)));
+
+    const float projectionPlaneHeight = distanceToProjectionPlane * std::tan(VFOV * 0.5f) * 2.0f;
 
     while (IS_RUNNING)
     {
@@ -343,15 +362,13 @@ int main(int argc, char* argv[])
         SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
         drawFilledCircle(renderer, SCREEN_WIDTH / 2 + playerScreenX, playerScreenY, 30);
 
-        const float degreePerRay = FOV / NUMBER_OF_RAYS;
-        const float rayStartAngle = playerAngle - (FOV * 0.5f);
+        const float degreePerRay = HFOV / NUMBER_OF_RAYS;
+        const float rayStartAngle = playerAngle - (HFOV * 0.5f);
 
-        //float rayAngle = playerAngle;
         constexpr int maximumDepth = 20;
 
         float rayAngle = normaliseAngle(rayStartAngle);
 
-        // for (int i = 0; i < 1; i++)
         for (int i = 0; i < NUMBER_OF_RAYS; i++)
         {
             int depth = 0;
@@ -359,35 +376,31 @@ int main(int argc, char* argv[])
             float rayX{0};
             float rayY{0};
 
-            // Horizontal hit check.
-            float horizontalHitX{};
-            float horizontalHitY{};
-            float horizontalDistance = std::numeric_limits<float>::max();
-
             const bool isFacingUp = rayAngle > std::numbers::pi;
             const bool isFacingDown = !isFacingUp;
             const bool isFacingLeft = rayAngle > 0.5f * std::numbers::pi && rayAngle < 1.5f * std::numbers::pi;
             const bool isFacingRight = !isFacingLeft;
 
+            // Horizontal hit check.
+            float horizontalHitX{};
+            float horizontalHitY{};
+            float horizontalDistance = std::numeric_limits<float>::max();
+
             // The ray is looking 'up'.
             if (isFacingUp)
-            {
                 rayY = std::floor(playerY) - 0.000001f;
-            }
             // The ray is looking 'down'.
             else if (isFacingDown)
-            {
                 rayY = std::floor(playerY) + 1.0f;
-            }
 
             rayX = ((rayY - playerY) / std::tan(rayAngle)) + playerX;
 
-            if (rayAngle == 0.0f || rayAngle == std::numbers::pi)
-            {
-                rayX = playerX;
-                rayY = playerY;
-                depth = maximumDepth;
-            }
+            // if (rayAngle == 0.0f || rayAngle == std::numbers::pi)
+            // {
+            //     rayX = playerX;
+            //     rayY = playerY;
+            //     depth = maximumDepth;
+            // }
 
             float rayYOffset = isFacingUp ? -1 : 1;
             float rayXOffset = rayYOffset / std::tan(rayAngle);
@@ -416,14 +429,10 @@ int main(int argc, char* argv[])
 
             // The ray is looking 'right'.
             if (isFacingRight)
-            {
                 rayX = std::floor(playerX) + 1.0f;
-            }
             // The ray is looking 'left'.
             else if (isFacingLeft)
-            {
                 rayX = std::floor(playerX) - 0.000001f;
-            }
 
             rayY = playerY + (rayX - playerX) * std::tan(rayAngle);
 
@@ -471,7 +480,18 @@ int main(int argc, char* argv[])
             // Draw the line.
             SDL_RenderLine(renderer, SCREEN_WIDTH / 2 + playerScreenX, playerScreenY, SCREEN_WIDTH / 2 + rayScreenX, rayScreenY);
 
-            rayAngle = normaliseAngle(rayAngle + degreePerRay);
+            // Get the current ray's screen X position.
+            const int screenX = (i + 1) * RAY_RES;
+
+            // Calculate the next ray's correct position on the projection plane for the next loop.
+            const float projectionScreenX = ((static_cast<float>(screenX * 2) - maxX) / maxX) * projectionPlaneHalfWidth;
+            const float castAngle = std::atan2f(projectionScreenX, distanceToProjectionPlane) + playerAngle;
+
+            // Prepare the ray angle for the next loop.
+            if (fixedProjection)
+                rayAngle = normaliseAngle(castAngle);
+            else
+                rayAngle = normaliseAngle(rayAngle + degreePerRay);
         }
 
         // Render the background
@@ -490,15 +510,22 @@ int main(int argc, char* argv[])
         {
             constexpr float wallWidth = (SCREEN_WIDTH / 2) / NUMBER_OF_RAYS;
 
-            const float wallHeight = (TILE_SIZE / (rays.at(i).distance * TILE_SIZE)) * distanceToProjectionPlane;
+            // const float wallHeight = (TILE_SIZE / (rays.at(i).distance * TILE_SIZE)) * distanceToProjectionPlane;
+            // const float wallHeight = distanceToProjectionPlane / rays.at(i).distance;
+
+            constexpr float halfWall = 1 * 0.5f;
+            const float projectionPlaneY = distanceToProjectionPlane * (halfWall / rays.at(i).distance);
+            const float wallHeight = SCREEN_HEIGHT * ((projectionPlaneY * 2) / projectionPlaneHeight);
 
             wallRect.x = i * RAY_RES;
             wallRect.y = (SCREEN_HEIGHT * 0.5f) - (wallHeight * 0.5f);
             wallRect.w = wallWidth;
             wallRect.h = wallHeight;
 
-            int colour = rays.at(i).colour * (90 / (rays.at(i).distance * TILE_SIZE));
-            colour = std::clamp(colour, 0, 255);
+            // int colour = rays.at(i).colour * (1 / rays.at(i).distance * 5);
+            // colour = std::clamp(colour, 30, 255);
+
+            const int colour = rays.at(i).colour;
 
             SDL_SetRenderDrawColor(renderer, colour, colour, colour, 255);
 
