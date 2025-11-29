@@ -372,7 +372,10 @@ int main(int argc, char* argv[])
             // int colour = rays.at(i).colour * (1 / rays.at(i).distance * 5);
             // colour = std::clamp(colour, 30, 255);
 
-            const int colour = rays.at(i).colour;
+            int colour = std::floor(rays.at(i).colour * (1 - rays.at(i).distance / 8));
+            colour = std::clamp(colour, 0, 255);
+
+            // const int colour = rays.at(i).colour;
 
             SDL_SetRenderDrawColor(renderer, colour, colour, colour, 255);
 
