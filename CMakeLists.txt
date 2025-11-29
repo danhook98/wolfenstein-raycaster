@@ -14,7 +14,8 @@ add_subdirectory(deps/SDL EXCLUDE_FROM_ALL)
 # Add GLEW
 # add_subdirectory(deps/glew EXCLUDE_FROM_ALL)
 
-add_executable(Raycaster src/main.cpp)
+add_executable(Raycaster src/main.cpp
+        src/Maths.cpp)
 
 target_include_directories(Raycaster PUBLIC ${PROJECT_SOURCE_DIR}/include)
 

@@ -10,8 +10,7 @@
 #include <string>
 
 #include "DeltaClock.h"
-
-float degreesToRadians(const float degrees);
+#include "Maths.h"
 
 namespace
 {
@@ -30,7 +29,7 @@ namespace
     double deltaTime{};
 
     // Ray casting config.
-    const float HFOV = degreesToRadians(90.0f);
+    const float HFOV = maths::degreesToRadians(90.0f);
 
     constexpr int GRID_WIDTH = 13;
     constexpr int GRID_HEIGHT = 13;
@@ -66,16 +65,6 @@ namespace
 
     constexpr float rotationSpeed{3.0f};
     constexpr float moveSpeed{2.0f};
-}
-
-float degreesToRadians(const float degrees)
-{
-    return degrees * (std::numbers::pi_v<float> / 180.0f);
-}
-
-float radiansToDegrees(const float radians)
-{
-    return radians * (180.0f / std::numbers::pi_v<float>);
 }
 
 Uint16 worldToGridCoordinate(const float worldPosition)
