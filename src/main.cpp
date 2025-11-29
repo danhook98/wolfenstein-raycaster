@@ -14,8 +14,11 @@
 
 namespace
 {
-    constexpr Uint16 SCREEN_WIDTH = 2560;
-    constexpr Uint16 SCREEN_HEIGHT = 1440;
+    constexpr Uint16 WINDOW_WIDTH = 2560;
+    constexpr Uint16 WINDOW_HEIGHT = 1280;
+
+    constexpr Uint16 SCREEN_WIDTH = 160;
+    constexpr Uint16 SCREEN_HEIGHT = 80;
 
     SDL_Window* window{nullptr};
     SDL_Renderer* renderer{nullptr};
@@ -180,7 +183,7 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    window = SDL_CreateWindow("Raycaster", SCREEN_WIDTH, SCREEN_HEIGHT, NULL);
+    window = SDL_CreateWindow("Raycaster", WINDOW_WIDTH, WINDOW_HEIGHT, NULL);
 
     if (!window)
     {
@@ -198,6 +201,8 @@ int main(int argc, char* argv[])
         SDL_Quit();
         return -1;
     }
+
+    SDL_SetRenderLogicalPresentation(renderer, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_LOGICAL_PRESENTATION_LETTERBOX);
 
     keyStates = SDL_GetKeyboardState(nullptr);
 
@@ -278,7 +283,10 @@ int main(int argc, char* argv[])
             {
                 if (hasWallAt(rayX, rayY)) // the ray hit a wall
                 {
+                    // Gte the distance to the hit point.
                     horizontalDistance = maths::distanceBetween(playerX, playerY, rayX, rayY);
+
+                    // Remove the fisheye effect for the distance.
                     horizontalDistance *= std::cos(playerAngle - rayAngle);
 
                     break;
@@ -311,7 +319,10 @@ int main(int argc, char* argv[])
             {
                 if (hasWallAt(rayX, rayY)) // the ray hit a wall
                 {
+                    // Gte the distance to the hit point.
                     verticalDistance = maths::distanceBetween(playerX, playerY, rayX, rayY);
+
+                    // Remove the fisheye effect for the distance.
                     verticalDistance *= std::cos(playerAngle - rayAngle);
 
                     break;
