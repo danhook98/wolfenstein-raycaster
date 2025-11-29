@@ -11,7 +11,6 @@
 
 #include "DeltaClock.h"
 
-void drawFilledCircle(SDL_Renderer* renderer, const int centreX, const int centreY, const int radius);
 float degreesToRadians(const float degrees);
 
 namespace
@@ -36,10 +35,8 @@ namespace
     constexpr int GRID_WIDTH = 13;
     constexpr int GRID_HEIGHT = 13;
 
-    constexpr float TILE_PIXEL_SCALE = (SCREEN_WIDTH / 2) / GRID_WIDTH;
-
     constexpr Uint8 RAY_RES = 1;
-    constexpr Uint16 NUMBER_OF_RAYS = (SCREEN_WIDTH / 2) / RAY_RES;
+    constexpr Uint16 NUMBER_OF_RAYS = SCREEN_WIDTH / RAY_RES;
 
     // Map.
     constexpr int MAP_SIZE = GRID_WIDTH * GRID_HEIGHT;
@@ -81,30 +78,9 @@ float radiansToDegrees(const float radians)
     return radians * (180.0f / std::numbers::pi_v<float>);
 }
 
-Uint16 gridToPixelCoordinate(const Uint16 gridPosition)
-{
-    return std::ceil(static_cast<float>(gridPosition) * TILE_PIXEL_SCALE);
-}
-
 Uint16 worldToGridCoordinate(const float worldPosition)
 {
     return std::floor(worldPosition);
-}
-
-Uint16 worldToPixelCoordinate(const float worldCoordinate)
-{
-    return std::ceil(worldCoordinate * TILE_PIXEL_SCALE);
-}
-
-float pixelToWorldCoordinate(const Uint16 pixel)
-{
-    return static_cast<float>(pixel) / TILE_PIXEL_SCALE;
-}
-
-Uint16 pixelToGridCoordinate(const Uint16 pixel)
-{
-    const float worldPosition = pixelToWorldCoordinate(pixel);
-    return worldToGridCoordinate(worldPosition);
 }
 
 bool hasWallAt(const float worldX, const float worldY)
@@ -149,10 +125,6 @@ void handleMovement()
         const float xOffsetPosition = playerX + xOffset;
         const float yOffsetPosition = playerY + yOffset;
 
-        SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
-        drawFilledCircle(renderer, (SCREEN_WIDTH / 2) + worldToPixelCoordinate(xOffsetPosition), worldToPixelCoordinate(playerY), 15.0f);
-        drawFilledCircle(renderer, (SCREEN_WIDTH / 2) + worldToPixelCoordinate(playerX), worldToPixelCoordinate(yOffsetPosition), 15.0f);
-
         if (!hasWallAt(xOffsetPosition, playerY))
             playerX += playerDeltaX * moveSpeed * static_cast<float>(deltaTime);
 
@@ -167,10 +139,6 @@ void handleMovement()
 
         const float xOffsetPosition = playerX - xOffset;
         const float yOffsetPosition = playerY - yOffset;
-
-        SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
-        drawFilledCircle(renderer, (SCREEN_WIDTH / 2) + worldToPixelCoordinate(xOffsetPosition), worldToPixelCoordinate(playerY), 15.0f);
-        drawFilledCircle(renderer, (SCREEN_WIDTH / 2) + worldToPixelCoordinate(playerX), worldToPixelCoordinate(yOffsetPosition), 15.0f);
 
         if (!hasWallAt(xOffsetPosition, playerY))
             playerX -= playerDeltaX * moveSpeed * static_cast<float>(deltaTime);
@@ -228,57 +196,6 @@ void handleEvent(SDL_Event& event)
     }
 }
 
-void drawMap()
-{
-    SDL_FRect rect{0.0f, 0.0f, TILE_PIXEL_SCALE - 2, TILE_PIXEL_SCALE - 2};
-
-    for (Uint16 y = 0; y < GRID_HEIGHT; y++)
-    {
-        for (Uint16 x = 0; x < GRID_WIDTH; x++)
-        {
-            rect.x = (SCREEN_WIDTH / 2) + gridToPixelCoordinate(x);
-            rect.y = gridToPixelCoordinate(y);
-
-            if (map[y][x] == 0)
-                SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-            else
-                SDL_SetRenderDrawColor(renderer, 40, 40, 40, 255);
-
-            SDL_RenderFillRect(renderer, &rect);
-        }
-    }
-}
-
-void drawFilledCircle(SDL_Renderer* renderer, const int centreX, const int centreY, const int radius)
-{
-    int x = 0;
-    int y = radius;
-    int p = 1 - radius; // Midpoint decision variable
-
-    // Draw the initial vertical line at the center of the circle
-    while (x <= y)
-    {
-        // Draw horizontal lines (symmetry in the circle)
-        SDL_RenderLine(renderer, centreX - x, centreY + y, centreX + x, centreY + y); // Top part
-        SDL_RenderLine(renderer, centreX - x, centreY - y, centreX + x, centreY - y); // Bottom part
-        SDL_RenderLine(renderer, centreX - y, centreY + x, centreX + y, centreY + x); // Left part
-        SDL_RenderLine(renderer, centreX - y, centreY - x, centreX + y, centreY - x); // Right part
-
-        x++;
-
-        // Midpoint circle decision logic
-        if (p < 0)
-        {
-            p = p + 2 * x + 1;
-        }
-        else
-        {
-            y--;
-            p = p + 2 * (x - y) + 1;
-        }
-    }
-}
-
 struct Ray
 {
     float distance;
@@ -322,12 +239,12 @@ int main(int argc, char* argv[])
     rays.fill({std::numeric_limits<float>::max(), 255});
 
     // Calculate the distance to the projection plane.
-    const float distanceToProjectionPlane = (SCREEN_WIDTH * 0.25f) / std::tan(HFOV * 0.5f);
+    const float distanceToProjectionPlane = (SCREEN_WIDTH * 0.5f) / std::tan(HFOV * 0.5f);
     const float projectionPlaneWidth = distanceToProjectionPlane * std::tan(HFOV * 0.5f) * 2.0f;
     const float projectionPlaneHalfWidth = projectionPlaneWidth * 0.5f;
-    constexpr int maxX = (SCREEN_WIDTH * 0.5f) - 1;
+    constexpr int maxX = SCREEN_WIDTH - 1;
 
-    const float VFOV = 2 * std::atan(std::tan(HFOV * 0.5f) * (SCREEN_HEIGHT / (SCREEN_WIDTH * 0.5f)));
+    const float VFOV = 2 * std::atan(std::tan(HFOV * 0.5f) * (static_cast<float>(SCREEN_HEIGHT) / static_cast<float>(SCREEN_WIDTH)));
 
     const float projectionPlaneHeight = distanceToProjectionPlane * std::tan(VFOV * 0.5f) * 2.0f;
 
@@ -340,7 +257,7 @@ int main(int argc, char* argv[])
 
         deltaTime = deltaClock.tick();
 
-//        handleMovement();
+       handleMovement();
 
         std::string title = "X: " + std::to_string(playerX) + " Y: " + std::to_string(playerY);
         SDL_SetWindowTitle(window, title.c_str());
@@ -349,22 +266,12 @@ int main(int argc, char* argv[])
         SDL_SetRenderDrawColorFloat(renderer, 0.0f, 0.0f, 0.0f, 0.0f);
         SDL_RenderClear(renderer);
 
-        drawMap();
-
-        const Uint16 playerScreenX = worldToPixelCoordinate(playerX);
-        const Uint16 playerScreenY = worldToPixelCoordinate(playerY);
-
-        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-        drawFilledCircle(renderer, SCREEN_WIDTH / 2 + playerScreenX, playerScreenY, 30);
-
         const float rayStartAngle = playerAngle - (HFOV * 0.5f);
-
-        constexpr int maximumDepth = 20;
-
         float rayAngle = normaliseAngle(rayStartAngle);
 
         for (int i = 0; i < NUMBER_OF_RAYS; i++)
         {
+            constexpr int maximumDepth = 20;
             int depth = 0;
 
             float rayX{0};
@@ -376,8 +283,6 @@ int main(int argc, char* argv[])
             const bool isFacingRight = !isFacingLeft;
 
             // Horizontal hit check.
-            float horizontalHitX{};
-            float horizontalHitY{};
             float horizontalDistance = std::numeric_limits<float>::max();
 
             // The ray is looking 'up'.
@@ -403,9 +308,7 @@ int main(int argc, char* argv[])
             {
                 if (hasWallAt(rayX, rayY)) // the ray hit a wall
                 {
-                    horizontalHitX = rayX;
-                    horizontalHitY = rayY;
-                    horizontalDistance = distanceBetween(playerX, playerY, horizontalHitX, horizontalHitY);
+                    horizontalDistance = distanceBetween(playerX, playerY, rayX, rayY);
                     horizontalDistance *= std::cos(playerAngle - rayAngle);
 
                     break;
@@ -417,8 +320,6 @@ int main(int argc, char* argv[])
             }
 
             // Vertical hit check.
-            float verticalHitX{};
-            float verticalHitY{};
             float verticalDistance = std::numeric_limits<float>::max();
 
             // The ray is looking 'right'.
@@ -440,9 +341,7 @@ int main(int argc, char* argv[])
             {
                 if (hasWallAt(rayX, rayY)) // the ray hit a wall
                 {
-                    verticalHitX = rayX;
-                    verticalHitY = rayY;
-                    verticalDistance = distanceBetween(playerX, playerY, verticalHitX, verticalHitY);
+                    verticalDistance = distanceBetween(playerX, playerY, rayX, rayY);
                     verticalDistance *= std::cos(playerAngle - rayAngle);
 
                     break;
@@ -455,24 +354,14 @@ int main(int argc, char* argv[])
 
             if (horizontalDistance < verticalDistance)
             {
-                rayX = horizontalHitX;
-                rayY = horizontalHitY;
                 rays.at(i).distance = horizontalDistance;
                 rays.at(i).colour = 255;
             }
             else
             {
-                rayX = verticalHitX;
-                rayY = verticalHitY;
                 rays.at(i).distance = verticalDistance;
                 rays.at(i).colour = 180;
             }
-
-            const Uint16 rayScreenX = worldToPixelCoordinate(rayX);
-            const Uint16 rayScreenY = worldToPixelCoordinate(rayY);
-
-            // Draw the line.
-            SDL_RenderLine(renderer, SCREEN_WIDTH / 2 + playerScreenX, playerScreenY, SCREEN_WIDTH / 2 + rayScreenX, rayScreenY);
 
             // Get the current ray's screen X position.
             const int screenX = (i + 1) * RAY_RES;
@@ -486,11 +375,11 @@ int main(int argc, char* argv[])
         }
 
         // Render the background
-        SDL_FRect background{0.0f, 0.0f, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2};
+        SDL_FRect background{0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT * 0.5f};
         SDL_SetRenderDrawColor(renderer, 56, 56, 56, 255);
         SDL_RenderFillRect(renderer, &background);
 
-        background.y = SCREEN_HEIGHT / 2;
+        background.y = SCREEN_HEIGHT * 0.5f;
         SDL_SetRenderDrawColor(renderer, 112, 112, 112, 255);
         SDL_RenderFillRect(renderer, &background);
 
@@ -499,7 +388,7 @@ int main(int argc, char* argv[])
         // Calculate and display the walls.
         for (int i = 0; i < NUMBER_OF_RAYS; i++)
         {
-            constexpr float wallWidth = (SCREEN_WIDTH / 2) / NUMBER_OF_RAYS;
+            constexpr float wallWidth = static_cast<float>(SCREEN_WIDTH) / static_cast<float>(NUMBER_OF_RAYS);
 
             constexpr float halfWall = 1 * 0.5f;
             const float projectionPlaneY = distanceToProjectionPlane * (halfWall / rays.at(i).distance);
@@ -519,7 +408,7 @@ int main(int argc, char* argv[])
 
             SDL_RenderFillRect(renderer, &wallRect);
         }
-        handleMovement();
+
         SDL_RenderPresent(renderer);
     }
 
