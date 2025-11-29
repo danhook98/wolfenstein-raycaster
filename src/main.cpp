@@ -16,8 +16,8 @@ float degreesToRadians(const float degrees);
 namespace
 {
     // Ensure a 2:1 aspect ratio!
-    constexpr Uint16 SCREEN_WIDTH = 3200;
-    constexpr Uint16 SCREEN_HEIGHT = 1600;
+    constexpr Uint16 SCREEN_WIDTH = 2560;
+    constexpr Uint16 SCREEN_HEIGHT = 1440;
 
     SDL_Window* window{nullptr};
     SDL_Renderer* renderer{nullptr};
@@ -30,7 +30,7 @@ namespace
     double deltaTime{};
 
     // Ray casting config.
-    const float HFOV = degreesToRadians(60.0f);
+    const float HFOV = degreesToRadians(90.0f);
 
     constexpr int GRID_WIDTH = 13;
     constexpr int GRID_HEIGHT = 13;
@@ -210,7 +210,7 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    window = SDL_CreateWindow("Raycaster", SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_OPENGL);
+    window = SDL_CreateWindow("Raycaster", SCREEN_WIDTH, SCREEN_HEIGHT, NULL);
 
     if (!window)
     {
