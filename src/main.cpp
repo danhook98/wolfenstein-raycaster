@@ -14,7 +14,6 @@
 
 namespace
 {
-    // Ensure a 2:1 aspect ratio!
     constexpr Uint16 SCREEN_WIDTH = 2560;
     constexpr Uint16 SCREEN_HEIGHT = 1440;
 
@@ -86,24 +85,6 @@ bool hasWallAt(const float worldX, const float worldY)
     return map[tileY][tileX] == 1;
 }
 
-float normaliseAngle(const float angle)
-{
-    if (angle <= 0.0f)
-        return angle + (2.0f * std::numbers::pi_v<float>);
-    else if (angle > (2.0f * std::numbers::pi))
-        return angle - (2.0f * std::numbers::pi_v<float>);
-
-    return angle;
-}
-
-float distanceBetween(const float x1, const float y1, const float x2, const float y2)
-{
-    const float x = x2 - x1;
-    const float y = y2 - y1;
-
-    return std::sqrt((x * x) + (y * y));
-}
-
 void handleMovement()
 {
     if (keyStates[SDL_SCANCODE_W])
@@ -139,7 +120,7 @@ void handleMovement()
     if (keyStates[SDL_SCANCODE_A])
     {
         playerAngle -= rotationSpeed * static_cast<float>(deltaTime);
-        playerAngle = normaliseAngle(playerAngle);
+        playerAngle = maths::normaliseAngle(playerAngle);
 
         playerDeltaX = std::cos(playerAngle);
         playerDeltaY = std::sin(playerAngle);
@@ -148,7 +129,7 @@ void handleMovement()
     if (keyStates[SDL_SCANCODE_D])
     {
         playerAngle += rotationSpeed * static_cast<float>(deltaTime);
-        playerAngle = normaliseAngle(playerAngle);
+        playerAngle = maths::normaliseAngle(playerAngle);
 
         playerDeltaX = std::cos(playerAngle);
         playerDeltaY = std::sin(playerAngle);
@@ -246,7 +227,7 @@ int main(int argc, char* argv[])
 
         deltaTime = deltaClock.tick();
 
-       handleMovement();
+        handleMovement();
 
         std::string title = "X: " + std::to_string(playerX) + " Y: " + std::to_string(playerY);
         SDL_SetWindowTitle(window, title.c_str());
@@ -256,7 +237,7 @@ int main(int argc, char* argv[])
         SDL_RenderClear(renderer);
 
         const float rayStartAngle = playerAngle - (HFOV * 0.5f);
-        float rayAngle = normaliseAngle(rayStartAngle);
+        float rayAngle = maths::normaliseAngle(rayStartAngle);
 
         for (int i = 0; i < NUMBER_OF_RAYS; i++)
         {
@@ -297,7 +278,7 @@ int main(int argc, char* argv[])
             {
                 if (hasWallAt(rayX, rayY)) // the ray hit a wall
                 {
-                    horizontalDistance = distanceBetween(playerX, playerY, rayX, rayY);
+                    horizontalDistance = maths::distanceBetween(playerX, playerY, rayX, rayY);
                     horizontalDistance *= std::cos(playerAngle - rayAngle);
 
                     break;
@@ -330,7 +311,7 @@ int main(int argc, char* argv[])
             {
                 if (hasWallAt(rayX, rayY)) // the ray hit a wall
                 {
-                    verticalDistance = distanceBetween(playerX, playerY, rayX, rayY);
+                    verticalDistance = maths::distanceBetween(playerX, playerY, rayX, rayY);
                     verticalDistance *= std::cos(playerAngle - rayAngle);
 
                     break;
@@ -360,7 +341,7 @@ int main(int argc, char* argv[])
             const float castAngle = std::atan2f(projectionScreenX, distanceToProjectionPlane) + playerAngle;
 
             // Prepare the ray angle for the next loop.
-            rayAngle = normaliseAngle(castAngle);
+            rayAngle = maths::normaliseAngle(castAngle);
         }
 
         // Render the background
